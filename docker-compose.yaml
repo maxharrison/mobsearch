@@ -1,0 +1,147 @@
+version: "3"
+
+services:
+
+  traefik:
+    image: traefik:v2.1.4
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker
+      - --certificatesresolvers.leresolver.acme.email=<email>
+      - --certificatesresolvers.leresolver.acme.storage=/acme.json
+      - --certificatesresolvers.leresolver.acme.tlschallenge=true
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
+    labels:
+      - traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)
+      - traefik.http.routers.http-catchall.entrypoints=web
+      - traefik.http.routers.http-catchall.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+    networks:
+      - backend
+      - proxy
+
+      
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    environment:
+      - LISTINGS_URL=<listings URL>
+      - REPORTS_URL=<reports URL>
+      - LOGO_URL=<logo URL>
+      - NAME=<name>
+      - ELASTICSEARCH_HOST=elasticsearch
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASS=<password>
+      - POSTGRESQL_DB=search
+      - POSTGRESQL_HOST=postgresql
+    labels:
+      - traefik.http.routers.server.rule=Host(`search.mobis.xyz`)
+      - traefik.http.routers.server.entrypoints=websecure
+      - traefik.http.routers.server.tls=true
+      - traefik.http.routers.server.tls.certresolver=leresolver
+      - traefik.http.services.server.loadbalancer.server.port=80
+    networks:
+      - backend
+      - proxy
+
+
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.crawler
+    environment:
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASS=<password>
+      - POSTGRESQL_DB=search
+      - POSTGRESQL_HOST=postgresql
+      - OPENBAZAAR_HOST=openbazaar
+      - OPENBAZAAR_USER=openbazaar
+      - OPENBAZAAR_PASS=<password>
+    networks:
+      - backend
+
+
+  importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    restart: always
+    environment:
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASS=<password>
+      - POSTGRESQL_DB=search
+      - POSTGRESQL_HOST=postgresql
+      - OPENBAZAAR_HOST=openbazaar
+      - OPENBAZAAR_USER=openbazaar
+      - OPENBAZAAR_PASS=<password>
+      - ELASTICSEARCH_HOST=elasticsearch
+    networks:
+      - backend
+    
+
+  updater:
+    build:
+      context: .
+      dockerfile: Dockerfile.updater
+    restart: always
+    environment:
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASS=<password>
+      - POSTGRESQL_DB=search
+      - POSTGRESQL_HOST=postgresql
+      - OPENBAZAAR_HOST=openbazaar
+      - OPENBAZAAR_USER=openbazaar
+      - OPENBAZAAR_PASS=<password>
+      - ELASTICSEARCH_HOST=elasticsearch
+    networks:
+      - backend
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - backend
+
+
+  postgresql:
+    image: postgres:12.1-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=<password>
+      - POSTGRES_DB=search
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+
+  openbazaar:
+    image: openbazaar/server:v0.13.8
+    volumes:
+      - obdata:/var/lib/openbazaar
+    networks:
+      - backend
+
+
+networks:
+  backend:
+  proxy:
+
+
+volumes:
+  pgdata:
+  esdata:
+  obdata:
