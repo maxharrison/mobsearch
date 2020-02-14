@@ -8,6 +8,10 @@ This project uses:
  - FastAPI
  - Traefik (with Let's Encrypt for https)
  - Docker (with Docker Compose)
+ 
+
+# Mobis
+I have deployed this code, currently residing at https://search.mobis.xyz/. Just add that URL to the OpenBazaar client to try it out.
 
 
 # How it works
