@@ -28,7 +28,7 @@ These are the Docker containers running:
 I tried to make the setup as easy as possible, although there is still some more I can do.
 
 Should be able to follow these steps to set up a basic installation:
- - download the repo using git clone
+ - download the repo using `git clone`
  - edit the `docker-compose.yaml` file and fill in any fields with <> in them
  - create a `acme.json` file in the project directory, and give it the necessary permissions (`chmod 600`)
  - run `docker-compose up`, but once the containers are running - kill them
