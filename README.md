@@ -1,4 +1,4 @@
-# Mobsearch
+# MobSearch
 An open source crawler, indexer and search provider stack for OpenBazaar written in Python
 
 This project uses:
