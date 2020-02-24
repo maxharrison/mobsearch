@@ -11,6 +11,7 @@ This project uses:
  
 
 # Mobis
+https://mobis.xyz
 I have deployed this code, currently residing at https://search.mobis.xyz/. Just add that URL to the OpenBazaar client to try it out.
 
 
